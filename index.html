@@ -164,6 +164,7 @@
   .abtn:hover{background:var(--ink);color:var(--bg)}
   .abtn.primary{background:var(--ink);color:var(--bg)}
   .abtn.primary:hover{opacity:.85}
+  .abtn:disabled{opacity:.4;cursor:not-allowed}
   body.admin{padding-bottom:70px}
   .card-admin{display:none;gap:8px;position:absolute;top:14px;right:14px}
   body.admin .card-admin{display:flex}
@@ -175,6 +176,9 @@
   .mini.danger:hover{color:#ff7b6b;border-color:#ff7b6b}
   body.admin .avatar-block{cursor:pointer}
   body.admin #avatar:hover{opacity:.7}
+  #tokenState{font-family:var(--mono);font-size:11px;letter-spacing:.1em}
+  #tokenState.ok{color:#8fc98f}
+  #tokenState.bad{color:#ff9b8b}
 
   /* ── Modal ── */
   .modal-mask{
@@ -199,7 +203,13 @@
   .field textarea{resize:vertical;min-height:88px}
   .field input:focus,.field select:focus,.field textarea:focus{border-color:#6b6b6b}
   .modal-acts{display:flex;gap:10px;justify-content:flex-end;margin-top:24px}
-  .hint{font-size:11.5px;color:var(--ink-faint);margin-top:6px}
+  .hint{font-size:11.5px;color:var(--ink-faint);margin-top:6px;line-height:1.6}
+  .steps{
+    font-size:13px;color:var(--ink-dim);line-height:1.9;margin-bottom:18px;
+    border:1px solid var(--line);border-radius:6px;padding:14px 16px;background:#101010;
+  }
+  .steps b{color:var(--ink)}
+  .steps a{color:#9db8c9;text-decoration:underline}
   #pwModal .modal{max-width:360px;text-align:center}
   #pwModal input{text-align:center;letter-spacing:.3em}
   .shake{animation:shake .4s}
@@ -215,7 +225,7 @@
     position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(20px);
     background:var(--ink);color:var(--bg);padding:10px 22px;border-radius:999px;
     font-size:13px;letter-spacing:.05em;opacity:0;pointer-events:none;
-    transition:all .3s;z-index:300;
+    transition:all .3s;z-index:300;max-width:86vw;text-align:center;
   }
   #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
@@ -275,11 +285,11 @@
 
 <!-- 管理列 -->
 <div id="adminBar" class="admin-only">
-  <span class="tag">ADMIN MODE</span>
+  <span class="tag">ADMIN MODE · <span id="tokenState">檢查中…</span></span>
   <button class="abtn primary" id="btnAdd">＋ 上架新作品</button>
   <button class="abtn" id="btnAvatar">更換大頭貼</button>
+  <button class="abtn" id="btnToken">設定鑰匙</button>
   <button class="abtn" id="btnExport">匯出備份</button>
-  <button class="abtn" id="btnImport">匯入備份</button>
   <button class="abtn" id="btnLogout">登出</button>
 </div>
 
@@ -296,6 +306,30 @@
         <button class="abtn primary" type="submit" id="pwOk">進入後台</button>
       </div>
     </form>
+  </div>
+</div>
+
+<!-- GitHub Token 設定 -->
+<div class="modal-mask" id="tokenModal">
+  <div class="modal">
+    <h2>設定發布鑰匙（只需一次）</h2>
+    <div class="steps">
+      後台改的東西要「全世界看得到」，需要一把 GitHub 鑰匙：<br>
+      1. 點 <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">這裡開 GitHub 產生頁</a>（要登入 GitHub）<br>
+      2. <b>Token name</b> 隨便取（例：portfolio）<br>
+      3. <b>Repository access</b> 選 <b>Only select repositories</b> → 勾 <b>nicolas-portfolio</b><br>
+      4. <b>Permissions → Contents</b> 改成 <b>Read and write</b><br>
+      5. 按 <b>Generate token</b>，把整串複製貼到下面
+    </div>
+    <div class="field">
+      <label>GITHUB TOKEN</label>
+      <input type="password" id="tokenInput" placeholder="github_pat_…" autocomplete="off">
+      <div class="hint">鑰匙只存在這台裝置的瀏覽器裡，不會出現在網站原始碼。換手機/電腦用後台時再貼一次即可。</div>
+    </div>
+    <div class="modal-acts">
+      <button class="abtn" id="tokenCancel">取消</button>
+      <button class="abtn primary" id="tokenSave">驗證並儲存</button>
+    </div>
   </div>
 </div>
 
@@ -327,57 +361,42 @@
     <div class="field">
       <label>封面圖（選填）</label>
       <input type="file" id="wImg" accept="image/*">
-      <div class="hint">會自動壓縮存進網站，不用先縮圖</div>
+      <div class="hint">會自動壓縮，不用先縮圖</div>
       <img id="imgPreview" alt="預覽">
     </div>
     <div class="modal-acts">
       <button class="abtn" id="wCancel">取消</button>
-      <button class="abtn primary" id="wSave">儲存</button>
+      <button class="abtn primary" id="wSave">發布</button>
     </div>
   </div>
 </div>
 
 <div id="toast"></div>
 <input type="file" id="avatarFile" accept="image/*" hidden>
-<input type="file" id="importFile" accept="application/json" hidden>
 
 <script>
 (function(){
   "use strict";
-  var STORE_KEY = "nicolas_portfolio_v1";
-  var PW_HASH = "1nwltz0"; // 密碼不以明文存放
+  var PW_HASH = "1nwltz0";               // 密碼不以明文存放
+  var TOKEN_KEY = "nicolas_gh_token";     // 發布鑰匙只存本機瀏覽器
+  var REPO = "nicolas5288-commits/nicolas-portfolio";
+  var API = "https://api.github.com/repos/" + REPO + "/contents/";
+  var DATA_FILE = "works.json";
 
-  // 預設大頭貼（N 字母佔位圖，登入後台可換）
+  // 預設大頭貼（N 字母佔位圖）
   var DEFAULT_AVATAR = "data:image/svg+xml," + encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" width="264" height="264"><rect width="264" height="264" fill="#1a1a1a"/><text x="50%" y="54%" font-family="Georgia,serif" font-size="110" fill="#555" text-anchor="middle" dominant-baseline="middle">N</text></svg>'
   );
 
-  // 首次載入的示範資料（可在後台編輯或刪除）
-  var SEED = {
-    avatar: null,
-    works: [
-      { id:"w1", cat:"小工具", title:"IG 數據週報產生器",
-        desc:"把 Windsor 拉出來的 IG 數據自動整理成中文週報，觸及、互動、粉絲變化一次看完。", link:"", img:null },
-      { id:"w2", cat:"提示詞", title:"Content Factory 內容產線",
-        desc:"從選題、腳本到貼文的一整套提示詞系統，讓創作者照流程走就能穩定產出。", link:"", img:null },
-      { id:"w3", cat:"網站", title:"本作品集網站",
-        desc:"一頁式黑灰質感作品集，內建隱藏後台，可直接上架新作品、更換大頭貼。", link:"", img:null }
-    ]
-  };
+  // works.json 讀不到時的備援（例如直接雙擊開本機檔案）
+  var SEED = { avatar:null, works:[] };
 
   function hash(s){ var x=5381,i; for(i=0;i<s.length;i++){ x=((x*33)^s.charCodeAt(i))>>>0; } return x.toString(36); }
-  function load(){
-    try{
-      var raw = localStorage.getItem(STORE_KEY);
-      if(raw){ var d = JSON.parse(raw); if(d && Array.isArray(d.works)) return d; }
-    }catch(e){}
-    return JSON.parse(JSON.stringify(SEED));
-  }
-  function save(){ localStorage.setItem(STORE_KEY, JSON.stringify(data)); }
   function uid(){ return "w" + Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
   function esc(s){ var d=document.createElement("div"); d.textContent=s||""; return d.innerHTML; }
+  function b64utf8(s){ return btoa(unescape(encodeURIComponent(s))); }
 
-  var data = load();
+  var data = SEED;
   var currentCat = "全部";
   var admin = sessionStorage.getItem("nicolas_admin") === "1";
 
@@ -385,17 +404,60 @@
   var grid = $("grid"), toastEl = $("toast");
   var toastTimer;
 
-  function toast(msg){
+  function toast(msg, ms){
     toastEl.textContent = msg;
     toastEl.classList.add("show");
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(function(){ toastEl.classList.remove("show"); }, 2200);
+    toastTimer = setTimeout(function(){ toastEl.classList.remove("show"); }, ms||2400);
+  }
+
+  /* ── GitHub API（後台發布用）── */
+  function token(){ return localStorage.getItem(TOKEN_KEY) || ""; }
+  function ghHeaders(){
+    return { "Authorization":"Bearer "+token(), "Accept":"application/vnd.github+json" };
+  }
+  function ghGetSha(path){
+    return fetch(API+path+"?ref=main&t="+Date.now(), {headers: ghHeaders()})
+      .then(function(r){ return r.ok ? r.json().then(function(j){ return j.sha; }) : null; })
+      .catch(function(){ return null; });
+  }
+  function ghPut(path, base64, message){
+    return ghGetSha(path).then(function(sha){
+      var body = { message:message, content:base64, branch:"main" };
+      if(sha) body.sha = sha;
+      return fetch(API+path, {method:"PUT", headers:ghHeaders(), body:JSON.stringify(body)});
+    }).then(function(r){
+      if(!r.ok) return r.json().catch(function(){return{};}).then(function(j){
+        throw new Error("GitHub 回應 "+r.status+(j.message?"："+j.message:""));
+      });
+      return true;
+    });
+  }
+  function publishData(message){
+    return ghPut(DATA_FILE, b64utf8(JSON.stringify(data,null,2)), message);
+  }
+  function requireToken(){
+    if(token()) return true;
+    toast("要先設定發布鑰匙才能上架");
+    openTokenModal();
+    return false;
+  }
+  function updateTokenState(){
+    var el = $("tokenState");
+    if(!token()){ el.textContent="尚未設定鑰匙"; el.className="bad"; return; }
+    fetch(API+DATA_FILE+"?ref=main&t="+Date.now(), {headers: ghHeaders()})
+      .then(function(r){
+        el.textContent = r.ok ? "鑰匙有效，可直接發布" : "鑰匙失效，請重新設定";
+        el.className = r.ok ? "ok" : "bad";
+      })
+      .catch(function(){ el.textContent="連不上 GitHub"; el.className="bad"; });
   }
 
   /* ── 渲染 ── */
   function render(){
     document.body.classList.toggle("admin", admin);
-    $("avatar").src = data.avatar || DEFAULT_AVATAR;
+    var av = data.avatar || DEFAULT_AVATAR;
+    $("avatar").src = av;
     $("avatarBlock").title = admin ? "點擊更換大頭貼" : "";
 
     var list = data.works.filter(function(w){ return currentCat==="全部" || w.cat===currentCat; });
@@ -408,20 +470,25 @@
       return '<article class="card" data-id="'+w.id+'">' +
         '<div class="card-admin"><button class="mini" data-act="edit">編輯</button><button class="mini danger" data-act="del">刪除</button></div>' +
         '<div class="card-top"><span class="card-idx">'+num+'</span><span class="card-cat">'+esc(w.cat)+'</span></div>' +
-        (w.img ? '<img class="card-img" src="'+w.img+'" alt="'+esc(w.title)+'">' : '') +
+        (w.img ? '<img class="card-img" src="'+esc(w.img)+'" alt="'+esc(w.title)+'">' : '') +
         '<h3>'+esc(w.title)+'</h3>' +
         '<p>'+esc(w.desc)+'</p>' +
         (w.link ? '<a class="card-link" href="'+esc(w.link)+'" target="_blank" rel="noopener">查看作品 <span class="arr">↗</span></a>' : '') +
       '</article>';
     }).join("");
 
-    // 進場動畫
     var cards = grid.querySelectorAll(".card");
     var io = new IntersectionObserver(function(entries){
       entries.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add("in"); io.unobserve(e.target); } });
     },{threshold:.08});
     cards.forEach(function(c,i){ c.style.transitionDelay = (i%6*60)+"ms"; io.observe(c); });
   }
+
+  /* ── 載入資料：works.json 是唯一資料來源 ── */
+  fetch(DATA_FILE+"?t="+Date.now())
+    .then(function(r){ if(!r.ok) throw 0; return r.json(); })
+    .then(function(d){ if(d && Array.isArray(d.works)) data = d; render(); })
+    .catch(function(){ render(); });
 
   /* ── 分類 ── */
   $("tabs").addEventListener("click", function(e){
@@ -444,7 +511,9 @@
       sessionStorage.setItem("nicolas_admin","1");
       $("pwModal").classList.remove("open");
       render();
-      toast("已進入後台");
+      updateTokenState();
+      if(!token()){ openTokenModal(); }
+      else toast("已進入後台");
     }else{
       var m = $("pwModal").querySelector(".modal");
       m.classList.remove("shake"); void m.offsetWidth; m.classList.add("shake");
@@ -463,6 +532,30 @@
     toast("已登出");
   });
 
+  /* ── Token 設定 ── */
+  function openTokenModal(){
+    $("tokenInput").value = "";
+    $("tokenModal").classList.add("open");
+  }
+  $("btnToken").addEventListener("click", openTokenModal);
+  $("tokenCancel").addEventListener("click", function(){ $("tokenModal").classList.remove("open"); });
+  $("tokenSave").addEventListener("click", function(){
+    var t = $("tokenInput").value.trim();
+    if(!t){ toast("先貼上鑰匙"); return; }
+    var btn = $("tokenSave");
+    btn.disabled = true; btn.textContent = "驗證中…";
+    fetch(API+DATA_FILE+"?ref=main&t="+Date.now(), {headers:{ "Authorization":"Bearer "+t, "Accept":"application/vnd.github+json" }})
+      .then(function(r){
+        if(!r.ok) throw new Error(r.status===401 ? "鑰匙無效（貼錯或過期）" : "鑰匙沒有這個 repo 的權限（第 3、4 步再檢查一次）");
+        localStorage.setItem(TOKEN_KEY, t);
+        $("tokenModal").classList.remove("open");
+        updateTokenState();
+        toast("鑰匙已設定，之後上架直接全網生效");
+      })
+      .catch(function(e){ toast(e.message || "驗證失敗，檢查網路"); })
+      .finally(function(){ btn.disabled=false; btn.textContent="驗證並儲存"; });
+  });
+
   /* ── 圖片壓縮 ── */
   function compress(file, maxSide, quality, cb){
     var img = new Image();
@@ -477,21 +570,32 @@
     img.src = URL.createObjectURL(file);
   }
 
-  /* ── 大頭貼 ── */
-  function pickAvatar(){ if(admin) $("avatarFile").click(); }
+  /* ── 大頭貼：上傳即發布 ── */
+  function pickAvatar(){ if(admin && requireToken()) $("avatarFile").click(); }
   $("btnAvatar").addEventListener("click", pickAvatar);
   $("avatarBlock").addEventListener("click", pickAvatar);
   $("avatarFile").addEventListener("change", function(){
     var f = this.files[0]; this.value = "";
     if(!f) return;
+    toast("發布大頭貼中…", 8000);
     compress(f, 480, .85, function(url){
-      data.avatar = url; save(); render(); toast("大頭貼已更新");
+      ghPut("avatar.jpg", url.split(",")[1], "更新大頭貼")
+        .then(function(){
+          data.avatar = "avatar.jpg?v=" + Date.now();
+          return publishData("更新大頭貼");
+        })
+        .then(function(){
+          $("avatar").src = url;   // 本機立即預覽
+          toast("大頭貼已發布，約 1 分鐘後全網更新");
+        })
+        .catch(function(e){ toast("發布失敗："+e.message, 4000); });
     });
   });
 
   /* ── 新增 / 編輯作品 ── */
-  var pendingImg = null;
+  var pendingImg = null;   // 新上傳的 dataURL；沒動圖時保持原路徑字串
   function openWorkModal(w){
+    if(!requireToken()) return;
     pendingImg = w ? w.img : null;
     $("workModalTitle").textContent = w ? "編輯作品" : "上架新作品";
     $("wId").value = w ? w.id : "";
@@ -517,27 +621,44 @@
   $("wSave").addEventListener("click", function(){
     var title = $("wTitle").value.trim();
     if(!title){ toast("標題不能空白"); $("wTitle").focus(); return; }
+    if(!requireToken()) return;
     var link = $("wLink").value.trim();
     if(link && !/^https?:\/\//i.test(link)) link = "https://" + link;
-    var id = $("wId").value;
-    var item = {
-      id: id || uid(),
-      cat: $("wCat").value,
-      title: title,
-      desc: $("wDesc").value.trim(),
-      link: link,
-      img: pendingImg
-    };
-    if(id){
-      var i = data.works.findIndex(function(w){ return w.id===id; });
-      if(i>-1) data.works[i] = item;
+    var id = $("wId").value || uid();
+    var isEdit = !!$("wId").value;
+    var item = { id:id, cat:$("wCat").value, title:title, desc:$("wDesc").value.trim(), link:link, img:null };
+
+    var btn = $("wSave");
+    btn.disabled = true; btn.textContent = "發布中…";
+
+    var imgStep;
+    if(pendingImg && pendingImg.indexOf("data:")===0){
+      // 新圖：先傳圖檔，再把路徑寫進資料
+      var path = "img/"+id+"-"+Date.now()+".jpg";
+      imgStep = ghPut(path, pendingImg.split(",")[1], "上傳作品圖："+title)
+        .then(function(){ item.img = path; });
     }else{
-      data.works.unshift(item);
+      item.img = pendingImg || null;   // 沿用原圖或無圖
+      imgStep = Promise.resolve();
     }
-    try{ save(); }catch(e){ toast("儲存失敗：空間不足，換小一點的圖"); return; }
-    $("workModal").classList.remove("open");
-    render();
-    toast(id ? "已更新" : "已上架");
+
+    imgStep.then(function(){
+      if(isEdit){
+        var i = data.works.findIndex(function(w){ return w.id===id; });
+        if(i>-1) data.works[i] = item; else data.works.unshift(item);
+      }else{
+        data.works.unshift(item);
+      }
+      return publishData((isEdit?"更新作品：":"上架作品：")+title);
+    }).then(function(){
+      $("workModal").classList.remove("open");
+      render();
+      toast("已發布「"+title+"」，約 1 分鐘後全網更新");
+    }).catch(function(e){
+      toast("發布失敗："+e.message, 4500);
+    }).finally(function(){
+      btn.disabled = false; btn.textContent = "發布";
+    });
   });
 
   /* ── 卡片上的編輯 / 刪除 ── */
@@ -548,12 +669,17 @@
     if(!w) return;
     if(b.dataset.act === "edit"){ openWorkModal(w); }
     else if(confirm('確定刪除「'+w.title+'」？')){
+      if(!requireToken()) return;
+      var backup = data.works.slice();
       data.works = data.works.filter(function(x){ return x.id!==id; });
-      save(); render(); toast("已刪除");
+      render();
+      publishData("刪除作品："+w.title)
+        .then(function(){ toast("已刪除，約 1 分鐘後全網更新"); })
+        .catch(function(e){ data.works = backup; render(); toast("刪除失敗："+e.message, 4000); });
     }
   });
 
-  /* ── 備份 ── */
+  /* ── 匯出備份 ── */
   $("btnExport").addEventListener("click", function(){
     var blob = new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
     var a = document.createElement("a");
@@ -561,20 +687,6 @@
     a.download = "nicolas作品集備份_" + new Date().toISOString().slice(0,10).replace(/-/g,"") + ".json";
     a.click(); URL.revokeObjectURL(a.href);
     toast("已下載備份");
-  });
-  $("btnImport").addEventListener("click", function(){ $("importFile").click(); });
-  $("importFile").addEventListener("change", function(){
-    var f = this.files[0]; this.value = "";
-    if(!f) return;
-    var r = new FileReader();
-    r.onload = function(){
-      try{
-        var d = JSON.parse(r.result);
-        if(!d || !Array.isArray(d.works)) throw 0;
-        data = d; save(); render(); toast("已匯入備份");
-      }catch(e){ toast("檔案格式不對"); }
-    };
-    r.readAsText(f);
   });
 
   /* ── 雜項 ── */
@@ -587,6 +699,7 @@
   $("year").textContent = new Date().getFullYear();
 
   render();
+  if(admin) updateTokenState();
 })();
 </script>
 </body>
