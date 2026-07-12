@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nicolas — 作品集</title>
+<meta name="description" content="Nicolas 的作品集：小工具、提示詞、網站。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mrs+Saint+Delafield&family=Noto+Serif+TC:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0d0d0d;
+    --bg-soft:#141414;
+    --line:#262626;
+    --line-strong:#3a3a3a;
+    --ink:#e9e7e2;
+    --ink-dim:#9c9a94;
+    --ink-faint:#6b6a66;
+    --serif:"Noto Serif TC","Songti TC",serif;
+    --sans:"PingFang TC","Noto Sans TC",-apple-system,sans-serif;
+    --mono:ui-monospace,"SF Mono",Menlo,monospace;
+    --script:"Mrs Saint Delafield","Snell Roundhand","Savoye LET",cursive;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--sans);
+    font-size:15px;
+    line-height:1.75;
+    letter-spacing:.02em;
+    -webkit-font-smoothing:antialiased;
+  }
+  /* 底噪紋理，讓黑底有質感 */
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:999;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+    opacity:.035;
+  }
+  a{color:inherit;text-decoration:none}
+  button{font-family:inherit;cursor:pointer}
+  ::selection{background:#3a3a3a;color:#fff}
+
+  .wrap{max-width:1080px;margin:0 auto;padding:0 28px}
+
+  /* ── Header ── */
+  header{
+    position:fixed;top:0;left:0;right:0;z-index:100;
+    background:rgba(13,13,13,.82);backdrop-filter:blur(12px);
+    border-bottom:1px solid var(--line);
+  }
+  .header-inner{display:flex;align-items:center;justify-content:space-between;height:64px}
+  #logo{
+    font-family:var(--script);
+    font-size:34px;line-height:1;
+    color:var(--ink);
+    user-select:none;cursor:default;
+    padding:8px 6px 2px;
+    transition:opacity .2s;
+  }
+  #logo:hover{opacity:.75}
+  nav{display:flex;gap:26px;font-size:13px;color:var(--ink-dim);letter-spacing:.12em}
+  nav a{transition:color .2s}
+  nav a:hover{color:var(--ink)}
+
+  /* ── Hero ── */
+  .hero{padding-top:170px;padding-bottom:90px;border-bottom:1px solid var(--line)}
+  .hero-grid{display:flex;align-items:flex-end;justify-content:space-between;gap:48px;flex-wrap:wrap}
+  .kicker{font-family:var(--mono);font-size:12px;color:var(--ink-faint);letter-spacing:.28em;margin-bottom:22px}
+  h1{
+    font-family:var(--serif);font-weight:600;
+    font-size:clamp(34px,5.2vw,56px);
+    line-height:1.28;letter-spacing:.02em;
+  }
+  h1 em{font-style:normal;color:var(--ink-dim)}
+  .hero-sub{margin-top:24px;color:var(--ink-dim);max-width:520px;font-size:15px}
+  .avatar-block{display:flex;flex-direction:column;align-items:center;gap:14px}
+  #avatar{
+    width:132px;height:132px;border-radius:50%;
+    object-fit:cover;display:block;
+    border:1px solid var(--line-strong);
+    filter:grayscale(28%);
+    background:var(--bg-soft);
+  }
+  .avatar-cap{font-family:var(--mono);font-size:11px;color:var(--ink-faint);letter-spacing:.2em}
+
+  /* ── Filter tabs ── */
+  .works-head{
+    display:flex;align-items:baseline;justify-content:space-between;
+    padding:64px 0 30px;flex-wrap:wrap;gap:16px;
+  }
+  .works-title{font-family:var(--serif);font-size:22px;font-weight:600;letter-spacing:.06em}
+  .tabs{display:flex;gap:8px;flex-wrap:wrap}
+  .tab{
+    background:none;border:1px solid var(--line);color:var(--ink-dim);
+    padding:7px 18px;font-size:13px;letter-spacing:.08em;border-radius:999px;
+    transition:all .2s;
+  }
+  .tab:hover{border-color:var(--line-strong);color:var(--ink)}
+  .tab.active{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+
+  /* ── Cards ── */
+  .grid{
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
+    gap:1px;background:var(--line);border:1px solid var(--line);
+    margin-bottom:110px;
+  }
+  .card{
+    background:var(--bg);padding:30px 28px 26px;position:relative;
+    display:flex;flex-direction:column;gap:12px;min-height:220px;
+    transition:background .25s;
+  }
+  .card:hover{background:var(--bg-soft)}
+  .card-top{display:flex;justify-content:space-between;align-items:baseline}
+  .card-idx{font-family:var(--mono);font-size:12px;color:var(--ink-faint)}
+  .card-cat{
+    font-size:11px;letter-spacing:.18em;color:var(--ink-dim);
+    border:1px solid var(--line);padding:3px 10px;border-radius:999px;
+  }
+  .card-img{
+    width:100%;aspect-ratio:16/9;object-fit:cover;display:block;
+    border:1px solid var(--line);filter:grayscale(20%);border-radius:2px;
+  }
+  .card h3{font-family:var(--serif);font-size:19px;font-weight:600;line-height:1.45}
+  .card p{color:var(--ink-dim);font-size:13.5px;flex:1}
+  .card-link{
+    font-family:var(--mono);font-size:12px;letter-spacing:.1em;color:var(--ink-dim);
+    display:inline-flex;align-items:center;gap:6px;transition:color .2s;align-self:flex-start;
+  }
+  .card-link:hover{color:var(--ink)}
+  .card-link .arr{transition:transform .2s;display:inline-block}
+  .card-link:hover .arr{transform:translate(3px,-3px)}
+  .empty{
+    grid-column:1/-1;background:var(--bg);padding:80px 20px;text-align:center;
+    color:var(--ink-faint);font-size:14px;letter-spacing:.06em;
+  }
+
+  /* 卡片進場 */
+  .card{opacity:0;transform:translateY(14px)}
+  .card.in{opacity:1;transform:none;transition:opacity .5s ease,transform .5s ease,background .25s}
+
+  /* ── Footer ── */
+  footer{border-top:1px solid var(--line);padding:44px 0 60px;color:var(--ink-faint);font-size:12.5px}
+  .foot-inner{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
+  .foot-sig{font-family:var(--script);font-size:26px;color:var(--ink-dim)}
+
+  /* ── 管理模式 ── */
+  .admin-only{display:none}
+  body.admin .admin-only{display:flex}
+  #adminBar{
+    position:fixed;bottom:0;left:0;right:0;z-index:120;
+    background:#171717;border-top:1px solid var(--line-strong);
+    padding:12px 24px;gap:10px;align-items:center;flex-wrap:wrap;
+  }
+  #adminBar .tag{
+    font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--ink-faint);margin-right:auto;
+  }
+  .abtn{
+    background:none;border:1px solid var(--line-strong);color:var(--ink);
+    padding:8px 16px;font-size:13px;border-radius:4px;transition:all .2s;letter-spacing:.05em;
+  }
+  .abtn:hover{background:var(--ink);color:var(--bg)}
+  .abtn.primary{background:var(--ink);color:var(--bg)}
+  .abtn.primary:hover{opacity:.85}
+  body.admin{padding-bottom:70px}
+  .card-admin{display:none;gap:8px;position:absolute;top:14px;right:14px}
+  body.admin .card-admin{display:flex}
+  .mini{
+    background:#1d1d1d;border:1px solid var(--line-strong);color:var(--ink-dim);
+    font-size:11px;padding:4px 10px;border-radius:4px;transition:all .15s;
+  }
+  .mini:hover{color:var(--ink);border-color:var(--ink-dim)}
+  .mini.danger:hover{color:#ff7b6b;border-color:#ff7b6b}
+  body.admin .avatar-block{cursor:pointer}
+  body.admin #avatar:hover{opacity:.7}
+
+  /* ── Modal ── */
+  .modal-mask{
+    position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.72);
+    display:none;align-items:center;justify-content:center;padding:24px;
+    backdrop-filter:blur(4px);
+  }
+  .modal-mask.open{display:flex}
+  .modal{
+    background:#161616;border:1px solid var(--line-strong);border-radius:8px;
+    width:100%;max-width:480px;padding:34px 34px 30px;
+    max-height:88vh;overflow-y:auto;
+  }
+  .modal h2{font-family:var(--serif);font-size:19px;font-weight:600;margin-bottom:22px;letter-spacing:.06em}
+  .field{margin-bottom:16px}
+  .field label{display:block;font-size:12px;color:var(--ink-dim);letter-spacing:.12em;margin-bottom:7px}
+  .field input[type=text],.field input[type=url],.field input[type=password],.field select,.field textarea{
+    width:100%;background:#0f0f0f;border:1px solid var(--line-strong);color:var(--ink);
+    padding:11px 13px;font-size:14px;border-radius:5px;font-family:inherit;outline:none;
+    transition:border-color .2s;
+  }
+  .field textarea{resize:vertical;min-height:88px}
+  .field input:focus,.field select:focus,.field textarea:focus{border-color:#6b6b6b}
+  .modal-acts{display:flex;gap:10px;justify-content:flex-end;margin-top:24px}
+  .hint{font-size:11.5px;color:var(--ink-faint);margin-top:6px}
+  #pwModal .modal{max-width:360px;text-align:center}
+  #pwModal input{text-align:center;letter-spacing:.3em}
+  .shake{animation:shake .4s}
+  @keyframes shake{
+    0%,100%{transform:translateX(0)}
+    20%,60%{transform:translateX(-8px)}
+    40%,80%{transform:translateX(8px)}
+  }
+  #imgPreview{max-width:100%;border:1px solid var(--line);border-radius:4px;display:none;margin-top:8px}
+
+  /* ── Toast ── */
+  #toast{
+    position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(20px);
+    background:var(--ink);color:var(--bg);padding:10px 22px;border-radius:999px;
+    font-size:13px;letter-spacing:.05em;opacity:0;pointer-events:none;
+    transition:all .3s;z-index:300;
+  }
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  @media (max-width:640px){
+    .hero{padding-top:130px;padding-bottom:60px}
+    .hero-grid{flex-direction:column-reverse;align-items:flex-start}
+    nav{display:none}
+    #adminBar{padding:10px 14px}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap header-inner">
+    <div id="logo" title="Nicolas">Nicolas</div>
+    <nav>
+      <a href="#works">作品</a>
+      <a href="#about">關於</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero wrap" id="about">
+  <div class="hero-grid">
+    <div>
+      <div class="kicker">PORTFOLIO — TOOLS · PROMPTS · WEBSITES</div>
+      <h1>把行銷流程，<br>做成<em>可以重複使用</em>的東西。</h1>
+      <p class="hero-sub" id="bioText">我是 Nicolas，行銷人。這裡收錄我做過的小工具、提示詞系統與網站——每一件都是為了讓內容產出更快、更穩而生的。</p>
+    </div>
+    <div class="avatar-block" id="avatarBlock" title="">
+      <img id="avatar" alt="Nicolas 大頭貼">
+      <div class="avatar-cap">NICOLAS</div>
+    </div>
+  </div>
+</section>
+
+<main class="wrap" id="works">
+  <div class="works-head">
+    <div class="works-title">作品</div>
+    <div class="tabs" id="tabs">
+      <button class="tab active" data-cat="全部">全部</button>
+      <button class="tab" data-cat="小工具">小工具</button>
+      <button class="tab" data-cat="提示詞">提示詞</button>
+      <button class="tab" data-cat="網站">網站</button>
+    </div>
+  </div>
+  <div class="grid" id="grid"></div>
+</main>
+
+<footer>
+  <div class="wrap foot-inner">
+    <div class="foot-sig">Nicolas</div>
+    <div>© <span id="year"></span> Nicolas · Marketing &amp; Systems</div>
+  </div>
+</footer>
+
+<!-- 管理列 -->
+<div id="adminBar" class="admin-only">
+  <span class="tag">ADMIN MODE</span>
+  <button class="abtn primary" id="btnAdd">＋ 上架新作品</button>
+  <button class="abtn" id="btnAvatar">更換大頭貼</button>
+  <button class="abtn" id="btnExport">匯出備份</button>
+  <button class="abtn" id="btnImport">匯入備份</button>
+  <button class="abtn" id="btnLogout">登出</button>
+</div>
+
+<!-- 密碼 -->
+<div class="modal-mask" id="pwModal">
+  <div class="modal">
+    <h2>後台登入</h2>
+    <form id="pwForm">
+      <div class="field">
+        <input type="password" id="pwInput" placeholder="請輸入密碼" autocomplete="off">
+      </div>
+      <div class="modal-acts" style="justify-content:center">
+        <button class="abtn" type="button" id="pwCancel">取消</button>
+        <button class="abtn primary" type="submit" id="pwOk">進入後台</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- 新增 / 編輯作品 -->
+<div class="modal-mask" id="workModal">
+  <div class="modal">
+    <h2 id="workModalTitle">上架新作品</h2>
+    <input type="hidden" id="wId">
+    <div class="field">
+      <label>標題 *</label>
+      <input type="text" id="wTitle" maxlength="60" placeholder="例：IG 數據週報產生器">
+    </div>
+    <div class="field">
+      <label>分類 *</label>
+      <select id="wCat">
+        <option value="小工具">小工具</option>
+        <option value="提示詞">提示詞</option>
+        <option value="網站">網站</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>描述</label>
+      <textarea id="wDesc" maxlength="300" placeholder="一兩句話說明這個作品解決什麼問題"></textarea>
+    </div>
+    <div class="field">
+      <label>連結（選填）</label>
+      <input type="url" id="wLink" placeholder="https://…">
+    </div>
+    <div class="field">
+      <label>封面圖（選填）</label>
+      <input type="file" id="wImg" accept="image/*">
+      <div class="hint">會自動壓縮存進網站，不用先縮圖</div>
+      <img id="imgPreview" alt="預覽">
+    </div>
+    <div class="modal-acts">
+      <button class="abtn" id="wCancel">取消</button>
+      <button class="abtn primary" id="wSave">儲存</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<input type="file" id="avatarFile" accept="image/*" hidden>
+<input type="file" id="importFile" accept="application/json" hidden>
+
+<script>
+(function(){
+  "use strict";
+  var STORE_KEY = "nicolas_portfolio_v1";
+  var PW_HASH = "1nwltz0"; // 密碼不以明文存放
+
+  // 預設大頭貼（N 字母佔位圖，登入後台可換）
+  var DEFAULT_AVATAR = "data:image/svg+xml," + encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="264" height="264"><rect width="264" height="264" fill="#1a1a1a"/><text x="50%" y="54%" font-family="Georgia,serif" font-size="110" fill="#555" text-anchor="middle" dominant-baseline="middle">N</text></svg>'
+  );
+
+  // 首次載入的示範資料（可在後台編輯或刪除）
+  var SEED = {
+    avatar: null,
+    works: [
+      { id:"w1", cat:"小工具", title:"IG 數據週報產生器",
+        desc:"把 Windsor 拉出來的 IG 數據自動整理成中文週報，觸及、互動、粉絲變化一次看完。", link:"", img:null },
+      { id:"w2", cat:"提示詞", title:"Content Factory 內容產線",
+        desc:"從選題、腳本到貼文的一整套提示詞系統，讓創作者照流程走就能穩定產出。", link:"", img:null },
+      { id:"w3", cat:"網站", title:"本作品集網站",
+        desc:"一頁式黑灰質感作品集，內建隱藏後台，可直接上架新作品、更換大頭貼。", link:"", img:null }
+    ]
+  };
+
+  function hash(s){ var x=5381,i; for(i=0;i<s.length;i++){ x=((x*33)^s.charCodeAt(i))>>>0; } return x.toString(36); }
+  function load(){
+    try{
+      var raw = localStorage.getItem(STORE_KEY);
+      if(raw){ var d = JSON.parse(raw); if(d && Array.isArray(d.works)) return d; }
+    }catch(e){}
+    return JSON.parse(JSON.stringify(SEED));
+  }
+  function save(){ localStorage.setItem(STORE_KEY, JSON.stringify(data)); }
+  function uid(){ return "w" + Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+  function esc(s){ var d=document.createElement("div"); d.textContent=s||""; return d.innerHTML; }
+
+  var data = load();
+  var currentCat = "全部";
+  var admin = sessionStorage.getItem("nicolas_admin") === "1";
+
+  var $ = function(id){ return document.getElementById(id); };
+  var grid = $("grid"), toastEl = $("toast");
+  var toastTimer;
+
+  function toast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ toastEl.classList.remove("show"); }, 2200);
+  }
+
+  /* ── 渲染 ── */
+  function render(){
+    document.body.classList.toggle("admin", admin);
+    $("avatar").src = data.avatar || DEFAULT_AVATAR;
+    $("avatarBlock").title = admin ? "點擊更換大頭貼" : "";
+
+    var list = data.works.filter(function(w){ return currentCat==="全部" || w.cat===currentCat; });
+    if(!list.length){
+      grid.innerHTML = '<div class="empty">這個分類還沒有作品</div>';
+      return;
+    }
+    grid.innerHTML = list.map(function(w,i){
+      var num = ("0"+(i+1)).slice(-2);
+      return '<article class="card" data-id="'+w.id+'">' +
+        '<div class="card-admin"><button class="mini" data-act="edit">編輯</button><button class="mini danger" data-act="del">刪除</button></div>' +
+        '<div class="card-top"><span class="card-idx">'+num+'</span><span class="card-cat">'+esc(w.cat)+'</span></div>' +
+        (w.img ? '<img class="card-img" src="'+w.img+'" alt="'+esc(w.title)+'">' : '') +
+        '<h3>'+esc(w.title)+'</h3>' +
+        '<p>'+esc(w.desc)+'</p>' +
+        (w.link ? '<a class="card-link" href="'+esc(w.link)+'" target="_blank" rel="noopener">查看作品 <span class="arr">↗</span></a>' : '') +
+      '</article>';
+    }).join("");
+
+    // 進場動畫
+    var cards = grid.querySelectorAll(".card");
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add("in"); io.unobserve(e.target); } });
+    },{threshold:.08});
+    cards.forEach(function(c,i){ c.style.transitionDelay = (i%6*60)+"ms"; io.observe(c); });
+  }
+
+  /* ── 分類 ── */
+  $("tabs").addEventListener("click", function(e){
+    var b = e.target.closest(".tab"); if(!b) return;
+    currentCat = b.dataset.cat;
+    document.querySelectorAll(".tab").forEach(function(t){ t.classList.toggle("active", t===b); });
+    render();
+  });
+
+  /* ── 後台登入：雙擊 Logo ── */
+  $("logo").addEventListener("dblclick", function(){
+    if(admin){ toast("已在後台模式"); return; }
+    $("pwInput").value = "";
+    $("pwModal").classList.add("open");
+    setTimeout(function(){ $("pwInput").focus(); }, 60);
+  });
+  function tryLogin(){
+    if(hash($("pwInput").value) === PW_HASH){
+      admin = true;
+      sessionStorage.setItem("nicolas_admin","1");
+      $("pwModal").classList.remove("open");
+      render();
+      toast("已進入後台");
+    }else{
+      var m = $("pwModal").querySelector(".modal");
+      m.classList.remove("shake"); void m.offsetWidth; m.classList.add("shake");
+      $("pwInput").value = ""; $("pwInput").focus();
+    }
+  }
+  $("pwForm").addEventListener("submit", function(e){ e.preventDefault(); tryLogin(); });
+  $("pwInput").addEventListener("keydown", function(e){
+    if(e.key==="Enter"||e.keyCode===13){ e.preventDefault(); tryLogin(); }
+  });
+  $("pwCancel").addEventListener("click", function(){ $("pwModal").classList.remove("open"); });
+  $("btnLogout").addEventListener("click", function(){
+    admin = false;
+    sessionStorage.removeItem("nicolas_admin");
+    render();
+    toast("已登出");
+  });
+
+  /* ── 圖片壓縮 ── */
+  function compress(file, maxSide, quality, cb){
+    var img = new Image();
+    img.onload = function(){
+      var w = img.width, h = img.height, r = Math.min(1, maxSide/Math.max(w,h));
+      var c = document.createElement("canvas");
+      c.width = Math.round(w*r); c.height = Math.round(h*r);
+      c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+      cb(c.toDataURL("image/jpeg", quality));
+      URL.revokeObjectURL(img.src);
+    };
+    img.src = URL.createObjectURL(file);
+  }
+
+  /* ── 大頭貼 ── */
+  function pickAvatar(){ if(admin) $("avatarFile").click(); }
+  $("btnAvatar").addEventListener("click", pickAvatar);
+  $("avatarBlock").addEventListener("click", pickAvatar);
+  $("avatarFile").addEventListener("change", function(){
+    var f = this.files[0]; this.value = "";
+    if(!f) return;
+    compress(f, 480, .85, function(url){
+      data.avatar = url; save(); render(); toast("大頭貼已更新");
+    });
+  });
+
+  /* ── 新增 / 編輯作品 ── */
+  var pendingImg = null;
+  function openWorkModal(w){
+    pendingImg = w ? w.img : null;
+    $("workModalTitle").textContent = w ? "編輯作品" : "上架新作品";
+    $("wId").value = w ? w.id : "";
+    $("wTitle").value = w ? w.title : "";
+    $("wCat").value = w ? w.cat : "小工具";
+    $("wDesc").value = w ? w.desc : "";
+    $("wLink").value = w ? (w.link||"") : "";
+    $("wImg").value = "";
+    var p = $("imgPreview");
+    if(pendingImg){ p.src = pendingImg; p.style.display = "block"; } else { p.style.display = "none"; }
+    $("workModal").classList.add("open");
+    setTimeout(function(){ $("wTitle").focus(); }, 60);
+  }
+  $("btnAdd").addEventListener("click", function(){ openWorkModal(null); });
+  $("wCancel").addEventListener("click", function(){ $("workModal").classList.remove("open"); });
+  $("wImg").addEventListener("change", function(){
+    var f = this.files[0]; if(!f) return;
+    compress(f, 1000, .82, function(url){
+      pendingImg = url;
+      $("imgPreview").src = url; $("imgPreview").style.display = "block";
+    });
+  });
+  $("wSave").addEventListener("click", function(){
+    var title = $("wTitle").value.trim();
+    if(!title){ toast("標題不能空白"); $("wTitle").focus(); return; }
+    var link = $("wLink").value.trim();
+    if(link && !/^https?:\/\//i.test(link)) link = "https://" + link;
+    var id = $("wId").value;
+    var item = {
+      id: id || uid(),
+      cat: $("wCat").value,
+      title: title,
+      desc: $("wDesc").value.trim(),
+      link: link,
+      img: pendingImg
+    };
+    if(id){
+      var i = data.works.findIndex(function(w){ return w.id===id; });
+      if(i>-1) data.works[i] = item;
+    }else{
+      data.works.unshift(item);
+    }
+    try{ save(); }catch(e){ toast("儲存失敗：空間不足，換小一點的圖"); return; }
+    $("workModal").classList.remove("open");
+    render();
+    toast(id ? "已更新" : "已上架");
+  });
+
+  /* ── 卡片上的編輯 / 刪除 ── */
+  grid.addEventListener("click", function(e){
+    var b = e.target.closest(".mini"); if(!b || !admin) return;
+    var id = b.closest(".card").dataset.id;
+    var w = data.works.find(function(x){ return x.id===id; });
+    if(!w) return;
+    if(b.dataset.act === "edit"){ openWorkModal(w); }
+    else if(confirm('確定刪除「'+w.title+'」？')){
+      data.works = data.works.filter(function(x){ return x.id!==id; });
+      save(); render(); toast("已刪除");
+    }
+  });
+
+  /* ── 備份 ── */
+  $("btnExport").addEventListener("click", function(){
+    var blob = new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "nicolas作品集備份_" + new Date().toISOString().slice(0,10).replace(/-/g,"") + ".json";
+    a.click(); URL.revokeObjectURL(a.href);
+    toast("已下載備份");
+  });
+  $("btnImport").addEventListener("click", function(){ $("importFile").click(); });
+  $("importFile").addEventListener("change", function(){
+    var f = this.files[0]; this.value = "";
+    if(!f) return;
+    var r = new FileReader();
+    r.onload = function(){
+      try{
+        var d = JSON.parse(r.result);
+        if(!d || !Array.isArray(d.works)) throw 0;
+        data = d; save(); render(); toast("已匯入備份");
+      }catch(e){ toast("檔案格式不對"); }
+    };
+    r.readAsText(f);
+  });
+
+  /* ── 雜項 ── */
+  document.querySelectorAll(".modal-mask").forEach(function(m){
+    m.addEventListener("click", function(e){ if(e.target===m) m.classList.remove("open"); });
+  });
+  document.addEventListener("keydown", function(e){
+    if(e.key==="Escape") document.querySelectorAll(".modal-mask.open").forEach(function(m){ m.classList.remove("open"); });
+  });
+  $("year").textContent = new Date().getFullYear();
+
+  render();
+})();
+</script>
+</body>
+</html>
