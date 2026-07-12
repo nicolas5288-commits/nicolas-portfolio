@@ -510,8 +510,25 @@
       return true;
     });
   }
-  function publishData(message){
-    return ghPut(DATA_FILE, b64utf8(JSON.stringify(data,null,2)), message);
+  // 發布前先抓 GitHub 上的最新資料當基礎，只套用這次的改動
+  // （避免頁面載到舊/空資料時，整包蓋掉線上內容）
+  function ghGetLatestData(){
+    return fetch(API+DATA_FILE+"?ref=main&t="+Date.now(), {headers: ghHeaders()})
+      .then(function(r){ if(!r.ok) throw 0; return r.json(); })
+      .then(function(j){
+        var txt = decodeURIComponent(escape(atob(j.content.replace(/\s/g,""))));
+        var d = JSON.parse(txt);
+        if(!d || !Array.isArray(d.works)) throw 0;
+        return d;
+      })
+      .catch(function(){ return { avatar:null, contacts:[], works:[], hero:null }; });
+  }
+  function publishWith(applyChange, message){
+    return ghGetLatestData().then(function(latest){
+      applyChange(latest);
+      data = latest;
+      return ghPut(DATA_FILE, b64utf8(JSON.stringify(data,null,2)), message);
+    });
   }
   function requireToken(){
     if(token()) return true;
@@ -601,11 +618,17 @@
     cards.forEach(function(c,i){ c.style.transitionDelay = (i%6*60)+"ms"; io.observe(c); });
   }
 
-  /* ── 載入資料：works.json 是唯一資料來源 ── */
-  fetch(DATA_FILE+"?t="+Date.now())
-    .then(function(r){ if(!r.ok) throw 0; return r.json(); })
-    .then(function(d){ if(d && Array.isArray(d.works)) data = d; render(); })
-    .catch(function(){ render(); });
+  /* ── 載入資料：works.json 是唯一資料來源（Pages 重建空窗時退到 raw 備援）── */
+  function fetchJson(url){
+    return fetch(url).then(function(r){ if(!r.ok) throw 0; return r.json(); });
+  }
+  fetchJson(DATA_FILE+"?t="+Date.now())
+    .catch(function(){
+      return fetchJson("https://raw.githubusercontent.com/"+REPO+"/main/"+DATA_FILE+"?t="+Date.now());
+    })
+    .then(function(d){ if(d && Array.isArray(d.works)) data = d; })
+    .catch(function(){})
+    .finally(render);
 
   /* ── 分類 ── */
   $("tabs").addEventListener("click", function(e){
@@ -698,8 +721,7 @@
     compress(f, 480, .85, function(url){
       ghPut("avatar.jpg", url.split(",")[1], "更新大頭貼")
         .then(function(){
-          data.avatar = "avatar.jpg?v=" + Date.now();
-          return publishData("更新大頭貼");
+          return publishWith(function(d){ d.avatar = "avatar.jpg?v=" + Date.now(); }, "更新大頭貼");
         })
         .then(function(){
           $("avatar").src = url;   // 本機立即預覽
@@ -725,8 +747,8 @@
     if(!requireToken()) return;
     var btn = $("hSave");
     btn.disabled = true; btn.textContent = "發布中…";
-    data.hero = { title: title, sub: $("hSub").value.trim() };
-    publishData("更新首頁文案")
+    var hero = { title: title, sub: $("hSub").value.trim() };
+    publishWith(function(d){ d.hero = hero; }, "更新首頁文案")
       .then(function(){
         $("heroModal").classList.remove("open");
         render();
@@ -770,8 +792,7 @@
     });
     var btn = $("cSave");
     btn.disabled = true; btn.textContent = "發布中…";
-    data.contacts = list;
-    publishData("更新聯絡方式")
+    publishWith(function(d){ d.contacts = list; }, "更新聯絡方式")
       .then(function(){
         $("contactModal").classList.remove("open");
         render();
@@ -832,13 +853,10 @@
     }
 
     imgStep.then(function(){
-      if(isEdit){
-        var i = data.works.findIndex(function(w){ return w.id===id; });
-        if(i>-1) data.works[i] = item; else data.works.unshift(item);
-      }else{
-        data.works.unshift(item);
-      }
-      return publishData((isEdit?"更新作品：":"上架作品：")+title);
+      return publishWith(function(d){
+        var i = d.works.findIndex(function(w){ return w.id===id; });
+        if(i>-1) d.works[i] = item; else d.works.unshift(item);
+      }, (isEdit?"更新作品：":"上架作品：")+title);
     }).then(function(){
       $("workModal").classList.remove("open");
       render();
@@ -859,12 +877,11 @@
     if(b.dataset.act === "edit"){ openWorkModal(w); }
     else if(confirm('確定刪除「'+w.title+'」？')){
       if(!requireToken()) return;
-      var backup = data.works.slice();
-      data.works = data.works.filter(function(x){ return x.id!==id; });
-      render();
-      publishData("刪除作品："+w.title)
-        .then(function(){ toast("已刪除，約 1 分鐘後全網更新"); })
-        .catch(function(e){ data.works = backup; render(); toast("刪除失敗："+e.message, 4000); });
+      publishWith(function(d){
+        d.works = d.works.filter(function(x){ return x.id!==id; });
+      }, "刪除作品："+w.title)
+        .then(function(){ render(); toast("已刪除，約 1 分鐘後全網更新"); })
+        .catch(function(e){ toast("刪除失敗："+e.message, 4000); });
     }
   });
 
