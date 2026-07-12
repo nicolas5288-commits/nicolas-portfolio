@@ -1,6 +1,15 @@
 {
   "avatar": "avatar.jpg?v=1783831604762",
-  "works": [],
+  "works": [
+    {
+      "id": "wmrhbifkk0bfq",
+      "cat": "提示詞",
+      "title": "Claude串接 Obsidian 知識庫",
+      "desc": "讓你的 Claude 有個資料庫，用起來更加順手",
+      "link": "https://docs.google.com/document/d/1eG9hCoQYSbV4UNnOfzNXgdP--ErW-VKaYcEKEHX2Sng/edit?usp=sharing",
+      "img": null
+    }
+  ],
   "hero": {
     "title": "高餐生的新創之旅\n用 AI 寫一場*屬於自己*的旅程",
     "sub": "我是 Nicolas，一名剛畢業的高餐生。\n這裡會收錄我在這段新創之旅上的一些新作品、故事"
