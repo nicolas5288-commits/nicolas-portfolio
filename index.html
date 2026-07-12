@@ -131,6 +131,8 @@
     background:var(--bg-soft);
   }
   .avatar-cap{font-family:var(--mono);font-size:11px;color:var(--ink-faint);letter-spacing:.2em}
+  .avatar-co{font-family:var(--script);font-size:24px;color:var(--ink-dim);line-height:1.1;margin-top:-4px}
+  .avatar-co:empty{display:none}
 
   /* ── Filter tabs ── */
   .works-head{
@@ -313,6 +315,7 @@
     <div class="avatar-block" id="avatarBlock" title="">
       <img id="avatar" alt="Nicolas 大頭貼">
       <div class="avatar-cap" id="avatarCap">NICOLAS</div>
+      <div class="avatar-co" id="avatarCo"></div>
     </div>
   </div>
 </section>
@@ -406,6 +409,11 @@
     <div class="field">
       <label>大頭貼下方名字</label>
       <input type="text" id="hName" maxlength="24" placeholder="NICOLAS">
+    </div>
+    <div class="field">
+      <label>公司（顯示在名字下方）</label>
+      <input type="text" id="hCompany" maxlength="30" placeholder="例：Viralarc AI">
+      <div class="hint">會用跟 logo 一樣的草寫字體呈現，建議填英文（中文沒有草寫效果）；留空就不顯示</div>
     </div>
     <div class="modal-acts">
       <button class="abtn" id="hCancel">取消</button>
@@ -506,7 +514,8 @@
     return {
       title: h.title || DEFAULT_HERO.title,
       sub: h.sub || DEFAULT_HERO.sub,
-      name: h.name || DEFAULT_HERO.name
+      name: h.name || DEFAULT_HERO.name,
+      company: h.company || ""
     };
   }
 
@@ -622,6 +631,7 @@
     $("heroTitle").innerHTML = fmt(h.title);
     $("bioText").innerHTML = fmt(h.sub);
     $("avatarCap").textContent = h.name;
+    $("avatarCo").textContent = h.company;
 
     var cs = (data.contacts||[]).filter(function(c){ return CONTACT_TYPES[c.type] && (c.value||"").trim(); });
     $("navContact").hidden = !cs.length;
@@ -778,6 +788,7 @@
     $("hTitle").value = h.title;
     $("hSub").value = h.sub;
     $("hName").value = h.name;
+    $("hCompany").value = h.company;
     $("heroModal").classList.add("open");
     setTimeout(function(){ $("hTitle").focus(); }, 60);
   });
@@ -788,7 +799,12 @@
     if(!requireToken()) return;
     var btn = $("hSave");
     btn.disabled = true; btn.textContent = "發布中…";
-    var hero = { title: title, sub: $("hSub").value.trim(), name: $("hName").value.trim() || "NICOLAS" };
+    var hero = {
+      title: title,
+      sub: $("hSub").value.trim(),
+      name: $("hName").value.trim() || "NICOLAS",
+      company: $("hCompany").value.trim()
+    };
     publishWith(function(d){ d.hero = hero; }, "更新首頁文案")
       .then(function(){
         $("heroModal").classList.remove("open");
