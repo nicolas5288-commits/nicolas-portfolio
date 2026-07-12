@@ -1,7 +1,14 @@
 {
   "avatar": "avatar.jpg?v=1783831604762",
-  "contacts": [],
   "works": [
+    {
+      "id": "wmrhbp7e2vivh",
+      "cat": "小工具",
+      "title": "Google meet會議逐字稿轉錄器",
+      "desc": "簡單的會議逐字稿轉錄工具，可以快速將逐字稿轉檔交給 AI整理會議記錄",
+      "link": "https://drive.google.com/drive/folders/1-fD9tNz9GEs5EAb1pA7tqtYl-1aSc5lZ?usp=sharing",
+      "img": null
+    },
     {
       "id": "wmrhbifkk0bfq",
       "cat": "提示詞",
