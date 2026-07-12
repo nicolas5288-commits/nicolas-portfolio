@@ -77,6 +77,30 @@
   h1 em{font-style:normal;color:var(--ink-dim)}
   .hero-sub{margin-top:24px;color:var(--ink-dim);max-width:520px;font-size:15px}
   .hero-sub em{font-style:normal;color:var(--ink)}
+
+  /* ── 聯絡方式 ── */
+  .contacts{display:flex;gap:18px;margin-top:34px;flex-wrap:wrap}
+  .contact{display:flex;flex-direction:column;align-items:center;gap:7px;color:var(--ink-dim);transition:color .2s}
+  .contact .cico{
+    width:46px;height:46px;border:1px solid var(--line-strong);border-radius:50%;
+    display:flex;align-items:center;justify-content:center;transition:all .2s;
+  }
+  .contact .cico svg{width:21px;height:21px}
+  .contact:hover{color:var(--ink)}
+  .contact:hover .cico{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+  .contact .clab{font-family:var(--mono);font-size:10px;letter-spacing:.18em}
+
+  /* 聯絡方式編輯列 */
+  .crow{display:flex;gap:8px;margin-bottom:10px;align-items:center}
+  .crow select{
+    width:118px;flex:none;background:#0f0f0f;border:1px solid var(--line-strong);color:var(--ink);
+    padding:10px 8px;font-size:13px;border-radius:5px;outline:none;
+  }
+  .crow input{
+    flex:1;background:#0f0f0f;border:1px solid var(--line-strong);color:var(--ink);
+    padding:10px 12px;font-size:13px;border-radius:5px;font-family:inherit;outline:none;
+  }
+  .crow .mini{flex:none;padding:8px 10px}
   .avatar-block{display:flex;flex-direction:column;align-items:center;gap:14px}
   #avatar{
     width:132px;height:132px;border-radius:50%;
@@ -256,6 +280,7 @@
       <div class="kicker">PORTFOLIO — TOOLS · PROMPTS · WEBSITES</div>
       <h1 id="heroTitle">把行銷流程，<br>做成<em>可以重複使用</em>的東西。</h1>
       <p class="hero-sub" id="bioText">我是 Nicolas，行銷人。這裡收錄我做過的小工具、提示詞系統與網站——每一件都是為了讓內容產出更快、更穩而生的。</p>
+      <div class="contacts" id="contacts"></div>
     </div>
     <div class="avatar-block" id="avatarBlock" title="">
       <img id="avatar" alt="Nicolas 大頭貼">
@@ -289,6 +314,7 @@
   <span class="tag">ADMIN MODE · <span id="tokenState">檢查中…</span></span>
   <button class="abtn primary" id="btnAdd">＋ 上架新作品</button>
   <button class="abtn" id="btnHero">編輯文案</button>
+  <button class="abtn" id="btnContact">聯絡方式</button>
   <button class="abtn" id="btnAvatar">更換大頭貼</button>
   <button class="abtn" id="btnToken">設定鑰匙</button>
   <button class="abtn" id="btnExport">匯出備份</button>
@@ -352,6 +378,23 @@
     <div class="modal-acts">
       <button class="abtn" id="hCancel">取消</button>
       <button class="abtn primary" id="hSave">發布</button>
+    </div>
+  </div>
+</div>
+
+<!-- 編輯聯絡方式 -->
+<div class="modal-mask" id="contactModal">
+  <div class="modal">
+    <h2>編輯聯絡方式</h2>
+    <div id="cRows"></div>
+    <button class="abtn" id="cAdd" style="width:100%">＋ 新增一個</button>
+    <div class="hint" style="margin-top:10px">
+      LINE／IG／Threads／FB／YouTube／GitHub／網站 → 貼完整網址；Email → 直接貼信箱；電話 → 直接貼號碼。<br>
+      LINE 個人連結在手機 LINE App：主頁 → 加入好友 → 邀請 → 複製連結。
+    </div>
+    <div class="modal-acts">
+      <button class="abtn" id="cCancel">取消</button>
+      <button class="abtn primary" id="cSave">發布</button>
     </div>
   </div>
 </div>
@@ -487,6 +530,34 @@
       .catch(function(){ el.textContent="連不上 GitHub"; el.className="bad"; });
   }
 
+  /* ── 聯絡方式定義（icon 為單色線條 SVG，配合黑灰視覺）── */
+  var CONTACT_TYPES = {
+    line:    { label:"LINE",    ph:"https://line.me/ti/p/…",
+      svg:'<path d="M12 4.5c-4.7 0-8.5 3-8.5 6.8 0 3.4 3 6.2 7 6.7l-.4 2.8c0 .3.3.5.6.3l3.4-2.3c3.6-.4 6.4-3.2 6.4-6.7 0-3.8-3.8-6.8-8.5-6.8z"/>' },
+    email:   { label:"MAIL",    ph:"you@gmail.com",
+      svg:'<rect x="3.5" y="5.5" width="17" height="13" rx="1.5"/><path d="m4 6.5 8 6 8-6"/>' },
+    ig:      { label:"IG",      ph:"https://instagram.com/…",
+      svg:'<rect x="4" y="4" width="16" height="16" rx="4.5"/><circle cx="12" cy="12" r="3.8"/><circle cx="16.8" cy="7.2" r="1.1" fill="currentColor" stroke="none"/>' },
+    threads: { label:"THREADS", ph:"https://threads.net/@…",
+      svg:'<text x="12" y="17" font-size="17" font-family="Georgia,serif" fill="currentColor" stroke="none" text-anchor="middle">@</text>' },
+    fb:      { label:"FB",      ph:"https://facebook.com/…",
+      svg:'<text x="12" y="17.5" font-size="17" font-family="Georgia,serif" font-weight="bold" fill="currentColor" stroke="none" text-anchor="middle">f</text>' },
+    yt:      { label:"YT",      ph:"https://youtube.com/@…",
+      svg:'<rect x="3" y="6" width="18" height="12" rx="3.2"/><path d="M10.5 9.5v5l4.6-2.5z" fill="currentColor" stroke="none"/>' },
+    github:  { label:"GITHUB",  ph:"https://github.com/…",
+      svg:'<circle cx="7" cy="6" r="2"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="8" r="2"/><path d="M7 8v8M17 10c0 4.5-7 3-9.5 6"/>' },
+    tel:     { label:"TEL",     ph:"0912345678",
+      svg:'<path d="M7 3.5h3l1.5 4-2 1.5c.9 2 2.6 3.7 4.5 4.5l1.5-2 4 1.5v3c0 1-.8 1.8-1.8 1.7C10.6 17.5 6.5 13.4 5.3 5.3c-.2-1 .7-1.8 1.7-1.8z"/>' },
+    web:     { label:"WEB",     ph:"https://…",
+      svg:'<circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c-2.5 2.7-2.5 13.3 0 16M12 4c2.5 2.7 2.5 13.3 0 16"/>' }
+  };
+  function contactHref(c){
+    var v = (c.value||"").trim();
+    if(c.type==="email") return "mailto:"+v;
+    if(c.type==="tel")   return "tel:"+v.replace(/[\s-]/g,"");
+    return /^https?:\/\//i.test(v) ? v : "https://"+v;
+  }
+
   /* ── 渲染 ── */
   function render(){
     document.body.classList.toggle("admin", admin);
@@ -496,6 +567,15 @@
     var h = heroOf();
     $("heroTitle").innerHTML = fmt(h.title);
     $("bioText").innerHTML = fmt(h.sub);
+
+    var cs = (data.contacts||[]).filter(function(c){ return CONTACT_TYPES[c.type] && (c.value||"").trim(); });
+    $("contacts").innerHTML = cs.map(function(c){
+      var t = CONTACT_TYPES[c.type];
+      var ext = (c.type==="email"||c.type==="tel") ? "" : ' target="_blank" rel="noopener"';
+      return '<a class="contact" href="'+esc(contactHref(c))+'"'+ext+' title="'+t.label+'">' +
+        '<span class="cico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">'+t.svg+'</svg></span>' +
+        '<span class="clab">'+t.label+'</span></a>';
+    }).join("");
 
     var list = data.works.filter(function(w){ return currentCat==="全部" || w.cat===currentCat; });
     if(!list.length){
@@ -651,6 +731,51 @@
         $("heroModal").classList.remove("open");
         render();
         toast("文案已發布，約 1 分鐘後全網更新");
+      })
+      .catch(function(e){ toast("發布失敗："+e.message, 4500); })
+      .finally(function(){ btn.disabled=false; btn.textContent="發布"; });
+  });
+
+  /* ── 編輯聯絡方式 ── */
+  function contactRow(c){
+    var row = document.createElement("div");
+    row.className = "crow";
+    var opts = Object.keys(CONTACT_TYPES).map(function(k){
+      return '<option value="'+k+'"'+(c&&c.type===k?" selected":"")+'>'+CONTACT_TYPES[k].label+'</option>';
+    }).join("");
+    row.innerHTML = '<select>'+opts+'</select>' +
+      '<input type="text" value="'+esc(c?c.value:"")+'" placeholder="">' +
+      '<button class="mini danger" type="button">✕</button>';
+    var sel = row.querySelector("select"), inp = row.querySelector("input");
+    function syncPh(){ inp.placeholder = CONTACT_TYPES[sel.value].ph; }
+    sel.addEventListener("change", syncPh); syncPh();
+    row.querySelector(".mini").addEventListener("click", function(){ row.remove(); });
+    $("cRows").appendChild(row);
+  }
+  $("btnContact").addEventListener("click", function(){
+    if(!requireToken()) return;
+    $("cRows").innerHTML = "";
+    var cs = data.contacts || [];
+    if(cs.length){ cs.forEach(contactRow); } else { contactRow(null); }
+    $("contactModal").classList.add("open");
+  });
+  $("cAdd").addEventListener("click", function(){ contactRow(null); });
+  $("cCancel").addEventListener("click", function(){ $("contactModal").classList.remove("open"); });
+  $("cSave").addEventListener("click", function(){
+    if(!requireToken()) return;
+    var list = [];
+    $("cRows").querySelectorAll(".crow").forEach(function(r){
+      var v = r.querySelector("input").value.trim();
+      if(v) list.push({ type:r.querySelector("select").value, value:v });
+    });
+    var btn = $("cSave");
+    btn.disabled = true; btn.textContent = "發布中…";
+    data.contacts = list;
+    publishData("更新聯絡方式")
+      .then(function(){
+        $("contactModal").classList.remove("open");
+        render();
+        toast("聯絡方式已發布，約 1 分鐘後全網更新");
       })
       .catch(function(e){ toast("發布失敗："+e.message, 4500); })
       .finally(function(){ btn.disabled=false; btn.textContent="發布"; });
