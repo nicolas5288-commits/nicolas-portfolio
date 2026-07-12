@@ -76,6 +76,7 @@
   }
   h1 em{font-style:normal;color:var(--ink-dim)}
   .hero-sub{margin-top:24px;color:var(--ink-dim);max-width:520px;font-size:15px}
+  .hero-sub em{font-style:normal;color:var(--ink)}
   .avatar-block{display:flex;flex-direction:column;align-items:center;gap:14px}
   #avatar{
     width:132px;height:132px;border-radius:50%;
@@ -253,7 +254,7 @@
   <div class="hero-grid">
     <div>
       <div class="kicker">PORTFOLIO — TOOLS · PROMPTS · WEBSITES</div>
-      <h1>把行銷流程，<br>做成<em>可以重複使用</em>的東西。</h1>
+      <h1 id="heroTitle">把行銷流程，<br>做成<em>可以重複使用</em>的東西。</h1>
       <p class="hero-sub" id="bioText">我是 Nicolas，行銷人。這裡收錄我做過的小工具、提示詞系統與網站——每一件都是為了讓內容產出更快、更穩而生的。</p>
     </div>
     <div class="avatar-block" id="avatarBlock" title="">
@@ -287,6 +288,7 @@
 <div id="adminBar" class="admin-only">
   <span class="tag">ADMIN MODE · <span id="tokenState">檢查中…</span></span>
   <button class="abtn primary" id="btnAdd">＋ 上架新作品</button>
+  <button class="abtn" id="btnHero">編輯文案</button>
   <button class="abtn" id="btnAvatar">更換大頭貼</button>
   <button class="abtn" id="btnToken">設定鑰匙</button>
   <button class="abtn" id="btnExport">匯出備份</button>
@@ -329,6 +331,27 @@
     <div class="modal-acts">
       <button class="abtn" id="tokenCancel">取消</button>
       <button class="abtn primary" id="tokenSave">驗證並儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 編輯首頁文案 -->
+<div class="modal-mask" id="heroModal">
+  <div class="modal">
+    <h2>編輯首頁文案</h2>
+    <div class="field">
+      <label>大標題 *</label>
+      <textarea id="hTitle" maxlength="60" style="min-height:72px"></textarea>
+      <div class="hint">按 Enter 換行；用 *星號* 包住的字會變灰色強調（例：做成*可以重複使用*的東西）</div>
+    </div>
+    <div class="field">
+      <label>介紹文</label>
+      <textarea id="hSub" maxlength="200"></textarea>
+      <div class="hint">用 *星號* 包住的字會變亮色強調</div>
+    </div>
+    <div class="modal-acts">
+      <button class="abtn" id="hCancel">取消</button>
+      <button class="abtn primary" id="hSave">發布</button>
     </div>
   </div>
 </div>
@@ -395,6 +418,17 @@
   function uid(){ return "w" + Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
   function esc(s){ var d=document.createElement("div"); d.textContent=s||""; return d.innerHTML; }
   function b64utf8(s){ return btoa(unescape(encodeURIComponent(s))); }
+  // 文案格式：換行→<br>、*字*→強調（先跑 esc 防注入）
+  function fmt(s){ return esc(s).replace(/\*([^*\n]+)\*/g,"<em>$1</em>").replace(/\n/g,"<br>"); }
+
+  var DEFAULT_HERO = {
+    title: "把行銷流程，\n做成*可以重複使用*的東西。",
+    sub: "我是 Nicolas，行銷人。這裡收錄我做過的小工具、提示詞系統與網站——每一件都是為了讓內容產出更快、更穩而生的。"
+  };
+  function heroOf(){
+    var h = data.hero || {};
+    return { title: h.title || DEFAULT_HERO.title, sub: h.sub || DEFAULT_HERO.sub };
+  }
 
   var data = SEED;
   var currentCat = "全部";
@@ -459,6 +493,9 @@
     var av = data.avatar || DEFAULT_AVATAR;
     $("avatar").src = av;
     $("avatarBlock").title = admin ? "點擊更換大頭貼" : "";
+    var h = heroOf();
+    $("heroTitle").innerHTML = fmt(h.title);
+    $("bioText").innerHTML = fmt(h.sub);
 
     var list = data.works.filter(function(w){ return currentCat==="全部" || w.cat===currentCat; });
     if(!list.length){
@@ -590,6 +627,33 @@
         })
         .catch(function(e){ toast("發布失敗："+e.message, 4000); });
     });
+  });
+
+  /* ── 編輯首頁文案 ── */
+  $("btnHero").addEventListener("click", function(){
+    if(!requireToken()) return;
+    var h = heroOf();
+    $("hTitle").value = h.title;
+    $("hSub").value = h.sub;
+    $("heroModal").classList.add("open");
+    setTimeout(function(){ $("hTitle").focus(); }, 60);
+  });
+  $("hCancel").addEventListener("click", function(){ $("heroModal").classList.remove("open"); });
+  $("hSave").addEventListener("click", function(){
+    var title = $("hTitle").value.trim();
+    if(!title){ toast("大標題不能空白"); $("hTitle").focus(); return; }
+    if(!requireToken()) return;
+    var btn = $("hSave");
+    btn.disabled = true; btn.textContent = "發布中…";
+    data.hero = { title: title, sub: $("hSub").value.trim() };
+    publishData("更新首頁文案")
+      .then(function(){
+        $("heroModal").classList.remove("open");
+        render();
+        toast("文案已發布，約 1 分鐘後全網更新");
+      })
+      .catch(function(e){ toast("發布失敗："+e.message, 4500); })
+      .finally(function(){ btn.disabled=false; btn.textContent="發布"; });
   });
 
   /* ── 新增 / 編輯作品 ── */
