@@ -988,9 +988,30 @@
   });
   $("year").textContent = new Date().getFullYear();
 
+  /* ── 流量統計（GoatCounter）── */
+  // 後台模式不計數，避免自己灌水
+  if(admin){ window.goatcounter = { no_onload: true }; }
+  function track(name){
+    if(!admin && window.goatcounter && window.goatcounter.count){
+      window.goatcounter.count({ path: name, event: true });
+    }
+  }
+  grid.addEventListener("click", function(e){
+    var a = e.target.closest(".card-link");
+    if(!a) return;
+    var card = a.closest(".card");
+    var t = card ? card.querySelector("h3").textContent : "unknown";
+    track("作品點擊: " + t);
+  });
+  $("contacts").addEventListener("click", function(e){
+    var a = e.target.closest(".contact");
+    if(a) track("聯絡點擊: " + a.title);
+  });
+
   render();
   if(admin) updateTokenState();
 })();
 </script>
+<script data-goatcounter="https://nicolasliu.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>
